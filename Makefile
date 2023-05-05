@@ -22,7 +22,7 @@ tpm2-tss/configure: tpm2-tss/.git/HEAD
 	mkdir -p $@
 
 tpm2-tss-build/Makefile: tpm2-tss/configure | tpm2-tss-build
-	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install CFLAGS='-Os -ffunction-sections -fdata-sections' --enable-shared=no --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm
+	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install CFLAGS='-Os -ffunction-sections -fdata-sections' --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm
 
 install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.a install/lib/libtss2-tcti-device.a install/lib/libtss2-tcti-pcap.a install/lib/libtss2-mu.a install/lib/libtss2-rc.a install/lib/libtss2-tcti-cmd.a install/lib/libtss2-tctildr.a install/lib/libtss2-tcti-spi-helper.a: tpm2-tss-build/Makefile
 	+make -C tpm2-tss-build install
@@ -67,7 +67,7 @@ cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc
 	cd $(dir $@) && ./autogen.sh
 
 cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc | cryptsetup-build
-	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup   --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ DEVMAPPER_LIBS='-ldevmapper -lm' CFLAGS='-Os -ffunction-sections -fdata-sections'
+	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup   --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ CFLAGS='-Os -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
 
 install/lib/pkgconfig/libcryptsetup.pc: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
