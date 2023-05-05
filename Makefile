@@ -100,6 +100,7 @@ systemd: versions.inc
 #
 # And we turn off anyhting in systemd we don't need in this specific binary.
 systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc.patched install/lib/libtss2-esys.a
+	-[ -e $@ ] && meson/bin/meson setup --wipe systemd $(dir $@)
 	env CFLAGS='-Os -ffunction-sections -fdata-sections -Dclose_all_fds=close_all_fds_SD -Dmkdir_p=mkdir_p_SD' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dlibcryptsetup-plugins=false -Dstatic-binaries=true -Dlibcryptsetup=true -Dopenssl=false -Dp11kit=false -Dselinux=false -Dgcrypt=false systemd $(dir $@)
 
 systemd-build/systemd-cryptsetup: systemd-build/build.ninja
