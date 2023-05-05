@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Install prerequisites
-      run: sudo apt-get install -y libaio-dev autopoint libpopt-dev libjson-c-dev gperf
+      run: sudo apt-get install -y libaio-dev autopoint libpopt-dev libjson-c-dev gperf gettext
 
     - name: Run make
       run: make
