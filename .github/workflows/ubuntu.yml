@@ -14,5 +14,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Install prerequisites
+      run: sudo apt-get install libaio-dev
+
     - name: Run make
       run: make
