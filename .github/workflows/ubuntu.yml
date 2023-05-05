@@ -19,3 +19,9 @@ jobs:
 
     - name: Run make
       run: make
+
+    - name: Archive systemd-cryptsetup
+      uses: actions/upload-artifact@v3
+      with:
+        name: systemd-cryptsetup
+        path: systemd-cryptsetup
