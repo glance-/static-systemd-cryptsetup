@@ -47,7 +47,7 @@ lvm2: versions.inc
 # So we build it in tree instead
 # Must be ordering dependency for in-tree-build
 lvm2/Makefile: | lvm2
-	cd lvm2 && ./configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run CFLAGS='-Os -ffunction-sections -fdata-sections'
+	cd lvm2 && ./configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run --without-vdo-format CFLAGS='-Os -ffunction-sections -fdata-sections'
 	cd lvm2 && perl -pi -e 's/SUBDIRS=.*$$/SUBDIRS=/' libdm/Makefile
 	cd lvm2 && perl -pi -e 's,-L\$$\(interfacebuilddir\),-L../libdm/ioctl -pthread,' tools/Makefile
 
