@@ -35,7 +35,7 @@ lvm2: versions.inc
 
 # TODO: lvm2 out of tree build doesn't work
 #lvm2-build/Makefile: lvm2 | lvm2-build
-#	cd lvm2-build && ../lvm2/configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --disable-systemd-journal  --disable-notify-dbus --disable-app-machineid --without-systemd-run
+#	cd lvm2-build && ../lvm2/configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
 #	cd lvm2-build && perl -pi -e 's/SUBDIRS=.*$$/SUBDIRS=/' libdm/Makefile
 #	cd lvm2-build && perl -pi -e 's,-L\$$\(interfacebuilddir\),-L../libdm/ioctl -pthread,' tools/Makefile
 #
@@ -47,7 +47,7 @@ lvm2: versions.inc
 # So we build it in tree instead
 # Must be ordering dependency for in-tree-build
 lvm2/Makefile: | lvm2
-	cd lvm2 && ./configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal  --disable-notify-dbus --disable-app-machineid --without-systemd-run CFLAGS='-Os -ffunction-sections -fdata-sections'
+	cd lvm2 && ./configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run CFLAGS='-Os -ffunction-sections -fdata-sections'
 	cd lvm2 && perl -pi -e 's/SUBDIRS=.*$$/SUBDIRS=/' libdm/Makefile
 	cd lvm2 && perl -pi -e 's,-L\$$\(interfacebuilddir\),-L../libdm/ioctl -pthread,' tools/Makefile
 
@@ -67,7 +67,7 @@ cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc
 	cd $(dir $@) && ./autogen.sh
 
 cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc | cryptsetup-build
-	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup   --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ CFLAGS='-Os -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
+	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ CFLAGS='-Os -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
 
 install/lib/pkgconfig/libcryptsetup.pc: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
