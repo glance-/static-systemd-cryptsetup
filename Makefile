@@ -118,5 +118,5 @@ clean:
 	rm -rf *-build install lvm2 systemd-cryptsetup
 
 # Clean all generated
-
+propper: clean
 	rm -rf cryptsetup/ meson/ systemd/ tpm2-tss/
