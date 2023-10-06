@@ -32,27 +32,14 @@ install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.
 lvm2: versions.inc
 	rm -rf $@
 	git clone --depth 1 --branch $(LVM2_VERSION) git://sourceware.org/git/lvm2.git $@
+	# Patch lvm2 to allow out of tree builds
+	perl -pi -e 's/ lvresize_fs_helper.sh/ \$$(srcdir)\/lvresize_fs_helper.sh/' lvm2/scripts/Makefile.in
 
-# TODO: lvm2 out of tree build doesn't work
-#lvm2-build/Makefile: lvm2 | lvm2-build
-#	cd lvm2-build && ../lvm2/configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
-#	cd lvm2-build && perl -pi -e 's/SUBDIRS=.*$$/SUBDIRS=/' libdm/Makefile
-#	cd lvm2-build && perl -pi -e 's,-L\$$\(interfacebuilddir\),-L../libdm/ioctl -pthread,' tools/Makefile
-#
-#lvm2-install: lvm2-build/Makefile
-#	+make -C lvm2-build/ install
+lvm2-build/Makefile: lvm2 | lvm2-build
+	cd lvm2-build && ../lvm2/configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
 
-#lvm2/configure: lvm2
-
-# So we build it in tree instead
-# Must be ordering dependency for in-tree-build
-lvm2/Makefile: | lvm2
-	cd lvm2 && ./configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run --without-vdo-format CFLAGS='-Os -ffunction-sections -fdata-sections'
-	cd lvm2 && perl -pi -e 's/SUBDIRS=.*$$/SUBDIRS=/' libdm/Makefile
-	cd lvm2 && perl -pi -e 's,-L\$$\(interfacebuilddir\),-L../libdm/ioctl -pthread,' tools/Makefile
-
-install/lib/libdevmapper.a install/lib/pkgconfig/devmapper.pc: lvm2/Makefile
-	+make -C lvm2 install
+install/lib/libdevmapper.a install/lib/pkgconfig/devmapper.pc: lvm2-build/Makefile
+	+make -C lvm2-build/ install
 
 
 # CRYPTSETUP
@@ -115,7 +102,7 @@ systemd-cryptsetup: systemd-build/systemd-cryptsetup.static
 
 # Clean build and artifacts
 clean:
-	rm -rf *-build install lvm2 systemd-cryptsetup
+	rm -rf *-build install systemd-cryptsetup
 
 # Clean all generated
 propper: clean
