@@ -25,3 +25,9 @@ jobs:
       with:
         name: systemd-cryptsetup
         path: systemd-cryptsetup
+
+    - name: Archive systemd-cryptenroll
+      uses: actions/upload-artifact@v3
+      with:
+        name: systemd-cryptenroll
+        path: systemd-cryptenroll

@@ -5,7 +5,7 @@ current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
 include versions.inc
 
-all: systemd-cryptsetup
+all: systemd-cryptsetup systemd-cryptenroll
 
 # TPM2-TSS
 
@@ -90,16 +90,16 @@ systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryp
 	-[ -e $@ ] && meson/bin/meson setup --wipe systemd $(dir $@)
 	env CFLAGS='-Os -ffunction-sections -fdata-sections -Dclose_all_fds=close_all_fds_SD -Dmkdir_p=mkdir_p_SD' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dlibcryptsetup-plugins=false -Dstatic-binaries=true -Dlibcryptsetup=true -Dopenssl=false -Dp11kit=false -Dselinux=false -Dgcrypt=false -Dzstd=false systemd $(dir $@)
 
-systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static: systemd-build/build.ninja
+systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static: systemd-build/build.ninja
 	ninja -C systemd-build $(notdir $@)
 
-systemd-cryptsetup: systemd-build/systemd-cryptsetup.static
+systemd-%: systemd-build/systemd-%.static
 	strip -o $@ $<
 
 
 # Clean build and artifacts
 clean:
-	rm -rf *-build install systemd-cryptsetup
+	rm -rf *-build install systemd-cryptsetup systemd-cryptenroll
 
 # Clean all generated
 propper: clean
