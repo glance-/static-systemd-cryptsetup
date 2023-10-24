@@ -22,7 +22,7 @@ tpm2-tss/configure: tpm2-tss/.git/HEAD
 	mkdir -p $@
 
 tpm2-tss-build/Makefile: tpm2-tss/configure | tpm2-tss-build
-	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static CFLAGS='-Os -ffunction-sections -fdata-sections' --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-policy --with-crypto=mbed
+	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-policy --with-crypto=mbed
 
 install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.a install/lib/libtss2-tcti-device.a install/lib/libtss2-tcti-pcap.a install/lib/libtss2-mu.a install/lib/libtss2-rc.a install/lib/libtss2-tcti-cmd.a install/lib/libtss2-tctildr.a install/lib/libtss2-tcti-spi-helper.a: tpm2-tss-build/Makefile
 	+make -C tpm2-tss-build install
@@ -36,7 +36,7 @@ lvm2: versions.inc
 	perl -pi -e 's/ lvresize_fs_helper.sh/ \$$(srcdir)\/lvresize_fs_helper.sh/' lvm2/scripts/Makefile.in
 
 lvm2-build/Makefile: lvm2 | lvm2-build
-	cd lvm2-build && ../lvm2/configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
+	cd lvm2-build && ../lvm2/configure CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
 
 install/lib/libdevmapper.a install/lib/pkgconfig/devmapper.pc: lvm2-build/Makefile
 	+make -C lvm2-build/ install
@@ -54,7 +54,7 @@ cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc
 	cd $(dir $@) && ./autogen.sh
 
 cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc | cryptsetup-build
-	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ CFLAGS='-Os -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
+	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
 
 install/lib/pkgconfig/libcryptsetup.pc: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
@@ -88,7 +88,7 @@ systemd: versions.inc
 # And we turn off anyhting in systemd we don't need in this specific binary.
 systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc.patched install/lib/libtss2-esys.a
 	-[ -e $@ ] && meson/bin/meson setup --wipe systemd $(dir $@)
-	env CFLAGS='-Os -ffunction-sections -fdata-sections -Dclose_all_fds=close_all_fds_SD -Dmkdir_p=mkdir_p_SD' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
+	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -Dclose_all_fds=close_all_fds_SD -Dmkdir_p=mkdir_p_SD' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
 
 .NOTPARALLEL: systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static
 systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static: systemd-build/build.ninja
