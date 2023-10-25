@@ -37,6 +37,8 @@ lvm2: versions.inc
 
 lvm2-build/Makefile: lvm2 | lvm2-build
 	cd lvm2-build && ../lvm2/configure CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
+	# Patch out a build path from being compiled in
+	perl -pi -e 's,#define LVRESIZE_FS_HELPER_PATH.*,#define LVRESIZE_FS_HELPER_PATH "/bin/false",' lvm2-build/include/configure.h
 
 install/lib/libdevmapper.a install/lib/pkgconfig/devmapper.pc: lvm2-build/Makefile
 	+make -C lvm2-build/ install
@@ -54,7 +56,7 @@ cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc
 	cd $(dir $@) && ./autogen.sh
 
 cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc | cryptsetup-build
-	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
+	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ CFLAGS='-Os -ULOCALEDIR -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
 
 install/lib/pkgconfig/libcryptsetup.pc: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
