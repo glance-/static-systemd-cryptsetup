@@ -89,8 +89,7 @@ systemd: versions.inc
 #
 # And we turn off anyhting in systemd we don't need in this specific binary.
 systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc.patched install/lib/libtss2-esys.a
-	-[ -e $@ ] && meson/bin/meson setup --wipe systemd $(dir $@)
-	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -Dclose_all_fds=close_all_fds_SD -Dmkdir_p=mkdir_p_SD' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
+	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -Dclose_all_fds=close_all_fds_SD -Dmkdir_p=mkdir_p_SD' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
 
 .NOTPARALLEL: systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static
 systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static: systemd-build/build.ninja
