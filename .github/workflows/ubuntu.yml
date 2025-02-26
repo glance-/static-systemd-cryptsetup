@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install prerequisites
       run: sudo apt-get install -y libaio-dev autopoint libpopt-dev libjson-c-dev gperf gettext autoconf-archive libcap-dev ninja-build libmbedtls-dev
@@ -21,13 +21,13 @@ jobs:
       run: make
 
     - name: Archive systemd-cryptsetup
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: systemd-cryptsetup
         path: systemd-cryptsetup
 
     - name: Archive systemd-cryptenroll
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: systemd-cryptenroll
         path: systemd-cryptenroll
