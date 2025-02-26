@@ -83,9 +83,8 @@ systemd: versions.inc
 systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/libtss2-esys.a
 	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
 
-.NOTPARALLEL: systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static
-systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static: systemd-build/build.ninja
-	ninja -C systemd-build $(notdir $@)
+systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static &: systemd-build/build.ninja
+	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static
 
 systemd-%: systemd-build/systemd-%.static
 	strip -o $@ $<
