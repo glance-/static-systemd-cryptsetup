@@ -32,8 +32,6 @@ install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.
 lvm2: versions.inc
 	rm -rf $@
 	git clone --depth 1 --branch $(LVM2_VERSION) git://sourceware.org/git/lvm2.git $@
-	# Patch lvm2 to allow out of tree builds
-	perl -pi -e 's/ lvresize_fs_helper.sh/ \$$(srcdir)\/lvresize_fs_helper.sh/' lvm2/scripts/Makefile.in
 
 lvm2-build/Makefile: lvm2 | lvm2-build
 	cd lvm2-build && ../lvm2/configure CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
@@ -61,12 +59,6 @@ cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.
 install/lib/pkgconfig/libcryptsetup.pc: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
 
-# We need to hack things in install/lib/pkgconfig/libcryptsetup.pc
-# to make linking happen correctly
-install/lib/pkgconfig/libcryptsetup.pc.patched: install/lib/pkgconfig/libcryptsetup.pc
-	perl -pi -e 's/^(Cflags: .+)$$/$$1 -pthread/ ; s/^(Libs: .+)$$/$$1 -ldevmapper -lm -luuid -ljson-c -lblkid -pthread/' install/lib/pkgconfig/libcryptsetup.pc
-	touch install/lib/pkgconfig/libcryptsetup.pc.patched
-
 # MAESON , needed for systemd build
 
 meson/bin/pip:
@@ -88,8 +80,8 @@ systemd: versions.inc
 # We use a modern meson to get --prefer-static
 #
 # And we turn off anyhting in systemd we don't need in this specific binary.
-systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc.patched install/lib/libtss2-esys.a
-	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -Dclose_all_fds=close_all_fds_SD -Dmkdir_p=mkdir_p_SD' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
+systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/libtss2-esys.a
+	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
 
 .NOTPARALLEL: systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static
 systemd-build/systemd-cryptsetup systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll systemd-build/systemd-cryptenroll.static: systemd-build/build.ninja
