@@ -1,0 +1,23 @@
+name: Build static systemd cryptsetup in debian bookworm container
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install prerequisites
+      run: apt-get update && apt-get install -y libaio-dev autopoint libpopt-dev libjson-c-dev gperf gettext autoconf-archive libcap-dev ninja-build libmbedtls-dev uuid-dev libblkid-dev libltdl-dev libmount-dev make python3-venv git pkg-config python3-jinja2
+
+    - name: Run make
+      run: make
