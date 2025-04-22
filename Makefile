@@ -76,12 +76,17 @@ systemd: versions.inc
 # The CFLAGS are to redefine some symbols which gets exposed when doing statical libs
 # to other symbol names to not conflict with other static libraries which use the same
 # symbol names
-#
+
+# Symbols in systemd which conflicts with libblkid 2.41 vs. systemd v257
+SYSTEMD_SYMBOLS_TO_RENAME=parse_size parse_range strv_free strv_length strv_extend_strv strv_consume_prepend strv_remove strv_extendf strv_reverse
+# patsubst don't expand multiple % so do it in shell instead.
+SYSTEMD_CLFAGS_REMAP=$(shell for s in $(SYSTEMD_SYMBOLS_TO_RENAME) ; do echo "-D$${s}=$${s}_SD" ; done)
+
 # We use a modern meson to get --prefer-static
 #
 # And we turn off anyhting in systemd we don't need in this specific binary.
 systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/libtss2-esys.a
-	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
+	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections $(SYSTEMD_CLFAGS_REMAP)' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
 
 systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static &: systemd-build/build.ninja
 	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static
