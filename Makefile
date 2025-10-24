@@ -65,7 +65,7 @@ meson/bin/pip:
 	python3 -m venv meson
 
 meson/bin/meson: meson/bin/pip
-	meson/bin/pip install meson==$(MAESON_VERSION)
+	meson/bin/pip install meson==$(MESON_VERSION)
 
 # SYSTEMD
 
