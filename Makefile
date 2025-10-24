@@ -77,8 +77,8 @@ systemd: versions.inc
 # to other symbol names to not conflict with other static libraries which use the same
 # symbol names
 
-# Symbols in systemd which conflicts with libblkid 2.41 vs. systemd v257
-SYSTEMD_SYMBOLS_TO_RENAME=parse_size parse_range strv_free strv_length strv_extend_strv strv_consume_prepend strv_remove strv_extendf strv_reverse
+# Symbols in systemd which conflicts with libblkid 2.41 vs. systemd v258
+SYSTEMD_SYMBOLS_TO_RENAME=parse_size parse_range strv_free strv_length strv_extend_strv strv_consume_prepend strv_remove strv_extendf strv_reverse strv_split
 # patsubst don't expand multiple % so do it in shell instead.
 SYSTEMD_CLFAGS_REMAP=$(shell for s in $(SYSTEMD_SYMBOLS_TO_RENAME) ; do echo "-D$${s}=$${s}_SD" ; done)
 
