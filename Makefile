@@ -31,7 +31,7 @@ install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.
 
 lvm2: versions.inc
 	rm -rf $@
-	git clone --depth 1 --branch $(LVM2_VERSION) git://sourceware.org/git/lvm2.git $@
+	git clone --depth 1 --branch $(LVM2_VERSION) https://gitlab.com/lvmteam/lvm2.git $@
 
 lvm2-build/Makefile: lvm2 | lvm2-build
 	cd lvm2-build && ../lvm2/configure CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
