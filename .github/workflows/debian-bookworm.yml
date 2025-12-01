@@ -17,7 +17,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install prerequisites
-      run: apt-get update && apt-get install -y libaio-dev autopoint libpopt-dev libjson-c-dev gperf gettext autoconf-archive libcap-dev ninja-build libmbedtls-dev uuid-dev libblkid-dev libltdl-dev libmount-dev make python3-venv git pkg-config python3-jinja2
+      run: apt-get update && apt-get install -y libaio-dev autopoint libpopt-dev libjson-c-dev gperf gettext autoconf-archive libcap-dev ninja-build libmbedtls-dev libltdl-dev make python3-venv git pkg-config python3-jinja2
 
     - name: Run make
       run: make

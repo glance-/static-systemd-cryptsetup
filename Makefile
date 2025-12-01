@@ -59,6 +59,23 @@ cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.
 install/lib/pkgconfig/libcryptsetup.pc: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
 
+# LIBMOUNT / LIBUUID / LIBBLKID
+
+util-linux: versions.inc
+	rm -rf $@
+	git clone --depth 1 --branch $(UTIL_LINUX_VERSION) https://github.com/util-linux/util-linux
+
+util-linux/.git/HEAD: util-linux
+
+util-linux/configure: util-linux/.git/HEAD
+	cd $(dir $@) && ./autogen.sh
+
+util-linux-build/Makefile: util-linux/configure | util-linux-build
+	cd $(dir $@) && ../util-linux/configure --enable-static --disable-shared --disable-all-programs --enable-libuuid --enable-libblkid --enable-libmount --prefix=$(current_dir)/install CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
+
+install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc &: util-linux-build/Makefile
+	+make -C util-linux-build install
+
 # MAESON , needed for systemd build
 
 meson/bin/pip:
@@ -101,4 +118,4 @@ clean:
 
 # Clean all generated
 propper: clean
-	rm -rf cryptsetup/ meson/ systemd/ tpm2-tss/ lvm2/
+	rm -rf cryptsetup/ meson/ systemd/ tpm2-tss/ lvm2/ util-linux/
