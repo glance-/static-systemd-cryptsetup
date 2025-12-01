@@ -102,8 +102,8 @@ SYSTEMD_CLFAGS_REMAP=$(shell for s in $(SYSTEMD_SYMBOLS_TO_RENAME) ; do echo "-D
 # We use a modern meson to get --prefer-static
 #
 # And we turn off anyhting in systemd we don't need in this specific binary.
-systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/libtss2-esys.a
-	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections $(SYSTEMD_CLFAGS_REMAP)' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled systemd $(dir $@)
+systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc install/lib/libtss2-esys.a
+	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections $(SYSTEMD_CLFAGS_REMAP)' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled systemd $(dir $@)
 
 systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static &: systemd-build/build.ninja
 	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static
