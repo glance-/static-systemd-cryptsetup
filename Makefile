@@ -5,7 +5,7 @@ current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
 include versions.inc
 
-all: systemd-cryptsetup systemd-cryptenroll veritysetup
+all: systemd-cryptsetup systemd-cryptenroll veritysetup systemd-dissect
 
 # TPM2-TSS
 
@@ -105,8 +105,8 @@ SYSTEMD_CLFAGS_REMAP=$(shell for s in $(SYSTEMD_SYMBOLS_TO_RENAME) ; do echo "-D
 systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc install/lib/libtss2-esys.a
 	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections $(SYSTEMD_CLFAGS_REMAP)' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled systemd $(dir $@)
 
-systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static &: systemd-build/build.ninja
-	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static
+systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static systemd-build/systemd-dissect.static &: systemd-build/build.ninja
+	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static systemd-dissect.static
 
 systemd-%: systemd-build/systemd-%.static
 	strip -o $@ $<
@@ -116,7 +116,7 @@ veritysetup: cryptsetup-build/veritysetup.static
 
 # Clean build and artifacts
 clean:
-	rm -rf *-build install systemd-cryptsetup systemd-cryptenroll veritysetup
+	rm -rf *-build install systemd-cryptsetup systemd-cryptenroll veritysetup systemd-dissect
 
 # Clean all generated
 propper: clean
