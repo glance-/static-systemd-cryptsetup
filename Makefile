@@ -7,13 +7,15 @@ current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 CFLAGS=-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include -fPIC
 LDFLAGS=-Wl,--gc-sections -L$(current_dir)/install/lib/
 PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/
+# Empty out system path, we don't want anything from there.
+PKG_CONFIG_LIBDIR=
 
 include versions.inc
 
 all: systemd-cryptsetup systemd-cryptenroll veritysetup systemd-dissect
 
 # And export the variables so they can be picked up from enviorment
-export CFLAGS LDFLAGS PKG_CONFIG_PATH
+export CFLAGS LDFLAGS PKG_CONFIG_PATH PKG_CONFIG_LIBDIR
 
 # TPM2-TSS
 
@@ -29,6 +31,7 @@ tpm2-tss/configure: tpm2-tss/.git/HEAD
 %-build:
 	mkdir -p $@
 
+# Find's mbedtls via header file check, so no requirement on PKG_CONFIG_LIBDIR here
 tpm2-tss-build/Makefile: tpm2-tss/configure install/lib/pkgconfig/uuid.pc | tpm2-tss-build
 	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-tcti-spidev --disable-tcti-i2c-helper --disable-tcti-spi-helper --disable-tcti-spi-ltt2go --disable-policy --with-crypto=mbed
 
@@ -142,6 +145,14 @@ meson/bin/meson: meson/bin/pip
 	meson/bin/pip install meson==$(MESON_VERSION)
 
 # SYSTEMD
+
+# v258 still needs libcap. main (and future v259) doesn't
+ifeq ($(SYSTEMD_VERSION), v258-p)
+systemd-build/build.ninja: install/lib/pkgconfig/libcap.pc
+
+install/lib/pkgconfig/libcap.pc:
+	cp /usr/lib/x86_64-linux-gnu/pkgconfig/libcap.pc $@
+endif
 
 systemd: versions.inc
 	rm -rf $@
