@@ -117,10 +117,10 @@ systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static
 	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static systemd-dissect.static
 
 systemd-%: systemd-build/systemd-%.static
-	strip -o $@ $<
+	strip --strip-all -o $@ $<
 
 veritysetup: cryptsetup-build/veritysetup.static
-	strip -o $@ $<
+	strip --strip-all -o $@ $<
 
 # Clean build and artifacts
 clean:
