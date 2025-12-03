@@ -47,7 +47,7 @@ lvm2-build/Makefile: lvm2 | lvm2-build
 	perl -pi -e 's,#define LVRESIZE_FS_HELPER_PATH.*,#define LVRESIZE_FS_HELPER_PATH "/bin/false",' lvm2-build/include/configure.h
 
 install/lib/libdevmapper.a install/lib/pkgconfig/devmapper.pc: lvm2-build/Makefile
-	+make -C lvm2-build/ install
+	+make -C lvm2-build/ install_device-mapper
 
 
 # CRYPTSETUP
