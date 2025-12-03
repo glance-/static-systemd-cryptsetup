@@ -30,7 +30,7 @@ tpm2-tss/configure: tpm2-tss/.git/HEAD
 	mkdir -p $@
 
 tpm2-tss-build/Makefile: tpm2-tss/configure install/lib/pkgconfig/uuid.pc | tpm2-tss-build
-	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-policy --with-crypto=mbed
+	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-tcti-spidev --disable-tcti-i2c-helper --disable-tcti-spi-helper --disable-tcti-spi-ltt2go --disable-policy --with-crypto=mbed
 
 install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.a install/lib/libtss2-tcti-device.a install/lib/libtss2-tcti-pcap.a install/lib/libtss2-mu.a install/lib/libtss2-rc.a install/lib/libtss2-tcti-cmd.a install/lib/libtss2-tctildr.a install/lib/libtss2-tcti-spi-helper.a: tpm2-tss-build/Makefile
 	+make -C tpm2-tss-build install
