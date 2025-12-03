@@ -1,4 +1,4 @@
-name: Build static systemd cryptsetup in debian trixie container
+name: Build static systemd cryptsetup with musl in debian trixie container
 
 on:
   push:
