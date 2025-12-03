@@ -61,7 +61,7 @@ cryptsetup/.git/HEAD: cryptsetup
 cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc
 	cd $(dir $@) && ./autogen.sh
 
-cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc install/lib/pkgconfig/uuid.pc | cryptsetup-build
+cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/json-c.pc install/lib/pkgconfig/popt.pc | cryptsetup-build
 	cd $(dir $@) && ../cryptsetup/configure CFLAGS='$(CFLAGS) -ULOCALEDIR' --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d
 
 install/lib/pkgconfig/libcryptsetup.pc cryptsetup-build/veritysetup.static &: cryptsetup-build/Makefile
@@ -83,6 +83,55 @@ util-linux-build/Makefile: util-linux/configure | util-linux-build
 
 install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc &: util-linux-build/Makefile
 	+make -C util-linux-build install
+
+# LIBPOPT
+
+popt: versions.inc
+	rm -rf $@
+	git clone --depth 1 --branch $(POPT_VERSION) https://github.com/rpm-software-management/popt
+
+popt/.git/HEAD: popt
+
+popt/configure: popt/.git/HEAD
+	cd $(dir $@) && ./autogen.sh
+
+popt-build/Makefile: popt/configure | popt-build
+	cd $(dir $@) && ../popt/configure --enable-static --disable-shared --prefix=$(current_dir)/install
+
+install/lib/pkgconfig/popt.pc: popt-build/Makefile
+	+make -C popt-build install
+
+# JSON-C
+
+json-c: versions.inc
+	rm -rf $@
+	git clone --depth 1 --branch $(JSON_C_VERSION) https://github.com/json-c/json-c
+
+json-c/.git/HEAD: json-c
+
+json-c-build/Makefile: json-c/.git/HEAD | json-c-build
+	cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DCMAKE_INSTALL_PREFIX=$(current_dir)/install -S json-c -B json-c-build
+
+install/lib/pkgconfig/json-c.pc: json-c-build/Makefile
+#	cmake --build json-c-build && cmake --install json-c-build --prefix $(current_dir)/install
+	make -C json-c-build install
+
+# LIBCRYPT
+
+libxcrypt:
+	rm -rf $@
+	git clone --depth 1 --branch $(LIBXCRYPT_VERSION) https://github.com/besser82/libxcrypt
+
+libxcrypt/.git/HEAD: libxcrypt
+
+libxcrypt/configure: libxcrypt/.git/HEAD
+	cd $(dir $@) && ./autogen.sh
+
+libxcrypt-build/Makefile: libxcrypt/configure | libxcrypt-build
+	cd $(dir $@) && ../libxcrypt/configure --enable-static --disable-shared --prefix=$(current_dir)/install
+
+install/lib/pkgconfig/libxcrypt.pc: libxcrypt-build/Makefile
+	+make -C libxcrypt-build install
 
 # MAESON , needed for systemd build
 
@@ -110,7 +159,7 @@ SYSTEMD_CLFAGS_REMAP=$(shell for s in $(SYSTEMD_SYMBOLS_TO_RENAME) ; do echo "-D
 # We use a modern meson to get --prefer-static
 #
 # And we turn off anyhting in systemd we don't need in this specific binary.
-systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc install/lib/libtss2-esys.a
+systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc install/lib/libtss2-esys.a install/lib/pkgconfig/libxcrypt.pc
 	env CFLAGS='$(CFLAGS) $(SYSTEMD_CLFAGS_REMAP)' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled systemd $(dir $@)
 
 systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static systemd-build/systemd-dissect.static &: systemd-build/build.ninja
