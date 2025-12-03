@@ -3,9 +3,17 @@ MAKEFLAGS += --no-default-rules
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
+# Not everything manages to use pkg-config, so give them hints to pick up includes and libraries
+CFLAGS=-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include
+LDFLAGS=-Wl,--gc-sections -L$(current_dir)/install/lib/
+PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/
+
 include versions.inc
 
 all: systemd-cryptsetup systemd-cryptenroll veritysetup systemd-dissect
+
+# And export the variables so they can be picked up from enviorment
+export CFLAGS LDFLAGS PKG_CONFIG_PATH
 
 # TPM2-TSS
 
@@ -22,7 +30,7 @@ tpm2-tss/configure: tpm2-tss/.git/HEAD
 	mkdir -p $@
 
 tpm2-tss-build/Makefile: tpm2-tss/configure | tpm2-tss-build
-	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-policy --with-crypto=mbed
+	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-policy --with-crypto=mbed
 
 install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.a install/lib/libtss2-tcti-device.a install/lib/libtss2-tcti-pcap.a install/lib/libtss2-mu.a install/lib/libtss2-rc.a install/lib/libtss2-tcti-cmd.a install/lib/libtss2-tctildr.a install/lib/libtss2-tcti-spi-helper.a: tpm2-tss-build/Makefile
 	+make -C tpm2-tss-build install
@@ -34,7 +42,7 @@ lvm2: versions.inc
 	git clone --depth 1 --branch $(LVM2_VERSION) https://gitlab.com/lvmteam/lvm2.git $@
 
 lvm2-build/Makefile: lvm2 | lvm2-build
-	cd lvm2-build && ../lvm2/configure CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections' --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
+	cd lvm2-build && ../lvm2/configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
 	# Patch out a build path from being compiled in
 	perl -pi -e 's,#define LVRESIZE_FS_HELPER_PATH.*,#define LVRESIZE_FS_HELPER_PATH "/bin/false",' lvm2-build/include/configure.h
 
@@ -54,7 +62,7 @@ cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc
 	cd $(dir $@) && ./autogen.sh
 
 cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc | cryptsetup-build
-	cd $(dir $@) && ../cryptsetup/configure --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/ CFLAGS='-Os -ULOCALEDIR -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
+	cd $(dir $@) && ../cryptsetup/configure CFLAGS='$(CFLAGS) -ULOCALEDIR' --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d
 
 install/lib/pkgconfig/libcryptsetup.pc cryptsetup-build/veritysetup.static &: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
@@ -71,7 +79,7 @@ util-linux/configure: util-linux/.git/HEAD
 	cd $(dir $@) && ./autogen.sh
 
 util-linux-build/Makefile: util-linux/configure | util-linux-build
-	cd $(dir $@) && ../util-linux/configure --enable-static --disable-shared --disable-all-programs --enable-libuuid --enable-libblkid --enable-libmount --prefix=$(current_dir)/install CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include'
+	cd $(dir $@) && ../util-linux/configure --enable-static --disable-shared --disable-all-programs --enable-libuuid --enable-libblkid --enable-libmount --prefix=$(current_dir)/install
 
 install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc &: util-linux-build/Makefile
 	+make -C util-linux-build install
@@ -103,7 +111,7 @@ SYSTEMD_CLFAGS_REMAP=$(shell for s in $(SYSTEMD_SYMBOLS_TO_RENAME) ; do echo "-D
 #
 # And we turn off anyhting in systemd we don't need in this specific binary.
 systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc install/lib/libtss2-esys.a
-	env CFLAGS='-Os -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections $(SYSTEMD_CLFAGS_REMAP)' LDFLAGS='-Wl,--gc-sections' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled systemd $(dir $@)
+	env CFLAGS='$(CFLAGS) $(SYSTEMD_CLFAGS_REMAP)' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled systemd $(dir $@)
 
 systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static systemd-build/systemd-dissect.static &: systemd-build/build.ninja
 	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static systemd-dissect.static
