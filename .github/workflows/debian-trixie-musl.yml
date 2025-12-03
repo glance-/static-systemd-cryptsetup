@@ -17,7 +17,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install prerequisites
-      run: apt-get update && apt-get install -y autopoint gperf gettext autoconf-archive ninja-build libltdl-dev make python3-venv git pkg-config python3-jinja2 musl-dev
+      run: apt-get update && apt-get install -y autopoint gperf gettext autoconf-archive ninja-build libltdl-dev make python3-venv git pkg-config python3-jinja2 musl-dev flex bison
 
     - name: Run make
       run: make MUSL=yes SYSTEMD_VERSION=main-p
