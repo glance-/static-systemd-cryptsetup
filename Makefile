@@ -14,6 +14,40 @@ include versions.inc
 
 all: systemd-cryptsetup systemd-cryptenroll veritysetup systemd-dissect
 
+ifeq ($(MUSL),yes)
+ifeq ($(SYSTEMD_VERSION), v258-p)
+$(error v258-p doesn't support musl builds!)
+endif
+CC=musl-gcc
+LD=musl-gcc
+export CC LD
+
+# Debian musl doesn't have kernel headers, so we need to re-create whats needed.
+musl-headers:
+	mkdir -p $@
+
+musl-headers/asm: | musl-headers
+	ln -s /usr/include/x86_64-linux-gnu/asm $@
+
+musl-headers/%: | musl-headers
+	ln -s /usr/include/$* $@
+
+# Declare the musl specific dependencies we need to inject
+util-linux-build/Makefile: musl-headers/linux
+
+lvm2-build/Makefile: musl-headers/linux
+lvm2-build/Makefile: musl-headers/asm musl-headers/asm-generic
+
+tpm2-tss-build/Makefile: musl-headers/linux
+
+libxcrypt/Makefile: musl-headers/linux
+
+systemd-build/build.ninja: musl-headers/linux musl-headers/mtd
+
+# This must be -idirafter so they end up after systemd's override files.
+CFLAGS+=-idirafter$(current_dir)/musl-headers/
+endif
+
 # And export the variables so they can be picked up from enviorment
 export CFLAGS LDFLAGS PKG_CONFIG_PATH PKG_CONFIG_LIBDIR
 
@@ -32,8 +66,13 @@ tpm2-tss/configure: tpm2-tss/.git/HEAD
 	mkdir -p $@
 
 # Find's mbedtls via header file check, so no requirement on PKG_CONFIG_LIBDIR here
+# musl builds build with crypto=none for now, but that doesn't work for sytsemd-cryptsetup:
+# ERROR:esys_crypto:../tpm2-tss/src/tss2-esys/esys_crypto.c:122:iesys_crypto_hash_start() Crypto callback "hash_start" not set
+# ERROR:esys:../tpm2-tss/src/tss2-esys/esys_iutil.c:1636:iesys_get_name() crypto hash start ErrorCode (0x00070036)
+# ERROR:esys:../tpm2-tss/src/tss2-esys/api/Esys_Load.c:354:Esys_Load_Finish() ErrorCode (0x00070011) in Public name not equal name in response
+# ERROR:esys:../tpm2-tss/src/tss2-esys/api/Esys_Load.c:112:Esys_Load() Esys Finish ErrorCode (0x00070011)
 tpm2-tss-build/Makefile: tpm2-tss/configure install/lib/pkgconfig/uuid.pc | tpm2-tss-build
-	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-tcti-spidev --disable-tcti-i2c-helper --disable-tcti-spi-helper --disable-tcti-spi-ltt2go --disable-policy --with-crypto=mbed
+	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-tcti-spidev --disable-tcti-i2c-helper --disable-tcti-spi-helper --disable-tcti-spi-ltt2go --disable-policy --with-crypto=$(if $(filter yes,$(MUSL)),none,mbed)
 
 install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.a install/lib/libtss2-tcti-device.a install/lib/libtss2-tcti-pcap.a install/lib/libtss2-mu.a install/lib/libtss2-rc.a install/lib/libtss2-tcti-cmd.a install/lib/libtss2-tctildr.a install/lib/libtss2-tcti-spi-helper.a: tpm2-tss-build/Makefile
 	+make -C tpm2-tss-build install
@@ -171,7 +210,7 @@ SYSTEMD_CLFAGS_REMAP=$(shell for s in $(SYSTEMD_SYMBOLS_TO_RENAME) ; do echo "-D
 #
 # And we turn off anyhting in systemd we don't need in this specific binary.
 systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc install/lib/libtss2-esys.a install/lib/pkgconfig/libxcrypt.pc
-	env CFLAGS='$(CFLAGS) $(SYSTEMD_CLFAGS_REMAP)' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled -Dxz=disabled -Dzlib=disabled -Dlibcurl=disabled -Didn=false -Dlz4=disabled -Dmicrohttpd=disabled -Dpam=disabled -Dpcre2=disabled -Delfutils=disabled -Dglib=disabled -Dgnutls=disabled -Ddbus=disabled -Dbzip2=disabled -Daudit=disabled -Dutmp=false -Dsysvinit-path= -Dsysvrcnd-path= -Drc-local= -Dxkbcommon=disabled -Dlibarchive=disabled -Dlibidn2=disabled systemd $(dir $@)
+	env CFLAGS='$(CFLAGS) $(SYSTEMD_CLFAGS_REMAP)' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled -Dxz=disabled -Dzlib=disabled -Dlibcurl=disabled -Didn=false -Dlz4=disabled -Dmicrohttpd=disabled -Dpam=disabled -Dpcre2=disabled -Delfutils=disabled -Dglib=disabled -Dgnutls=disabled -Ddbus=disabled -Dbzip2=disabled -Daudit=disabled -Dutmp=false -Dsysvinit-path= -Dsysvrcnd-path= -Drc-local= -Dxkbcommon=disabled -Dlibarchive=disabled -Dlibidn2=disabled $(if $(filter yes,$(MUSL)),-Dlibc=musl) systemd $(dir $@)
 
 systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static systemd-build/systemd-dissect.static &: systemd-build/build.ninja
 	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static systemd-dissect.static
