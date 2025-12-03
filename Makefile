@@ -42,7 +42,7 @@ lvm2: versions.inc
 	git clone --depth 1 --branch $(LVM2_VERSION) https://gitlab.com/lvmteam/lvm2.git $@
 
 lvm2-build/Makefile: lvm2 | lvm2-build
-	cd lvm2-build && ../lvm2/configure --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
+	cd lvm2-build && ../lvm2/configure --disable-shared --enable-static_link --disable-selinux --enable-pkgconfig --prefix=$(current_dir)/install --with-confdir=$(current_dir)/install/etc --disable-systemd-journal --disable-notify-dbus --disable-app-machineid --without-systemd-run
 	# Patch out a build path from being compiled in
 	perl -pi -e 's,#define LVRESIZE_FS_HELPER_PATH.*,#define LVRESIZE_FS_HELPER_PATH "/bin/false",' lvm2-build/include/configure.h
 
