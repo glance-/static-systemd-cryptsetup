@@ -12,7 +12,7 @@ PKG_CONFIG_LIBDIR=
 
 include versions.inc
 
-all: systemd-cryptsetup systemd-cryptenroll veritysetup systemd-dissect
+all: systemd-cryptsetup systemd-cryptenroll veritysetup cryptsetup.static systemd-dissect
 
 ifeq ($(MUSL),yes)
 ifeq ($(SYSTEMD_VERSION), v258-p)
@@ -106,7 +106,7 @@ cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc
 cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/json-c.pc install/lib/pkgconfig/popt.pc | cryptsetup-build
 	cd $(dir $@) && ../cryptsetup/configure CFLAGS='$(CFLAGS) -ULOCALEDIR' --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d
 
-install/lib/pkgconfig/libcryptsetup.pc cryptsetup-build/veritysetup.static &: cryptsetup-build/Makefile
+install/lib/pkgconfig/libcryptsetup.pc cryptsetup-build/veritysetup.static cryptsetup-build/cryptsetup.static &: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
 
 # LIBMOUNT / LIBUUID / LIBBLKID
@@ -221,9 +221,12 @@ systemd-%: systemd-build/systemd-%.static
 veritysetup: cryptsetup-build/veritysetup.static
 	strip --strip-all -o $@ $<
 
+cryptsetup.static: cryptsetup-build/cryptsetup.static
+	strip --strip-all -o $@ $<
+
 # Clean build and artifacts
 clean:
-	rm -rf *-build install systemd-cryptsetup systemd-cryptenroll veritysetup systemd-dissect
+	rm -rf *-build install systemd-cryptsetup systemd-cryptenroll veritysetup cryptsetup.static systemd-dissect
 
 # Clean all generated
 propper: clean
