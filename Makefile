@@ -51,6 +51,32 @@ endif
 # And export the variables so they can be picked up from enviorment
 export CFLAGS LDFLAGS PKG_CONFIG_PATH PKG_CONFIG_LIBDIR
 
+# Mbed-TLS
+mbedtls: versions.inc
+	rm -rf $@
+	git clone --depth 1 --branch $(MBEDTLS_VESION) https://github.com/Mbed-TLS/mbedtls $@
+
+mbedtls/.git/HEAD mbedtls/.gitmodules: mbedtls
+
+mbedtls/framework mbedtls/tf-psa-crypto &: mbedtls/.gitmodules
+	cd mbedtls && git submodule update --init --recursive --depth 1
+
+mbedtls-python/bin/pip:
+	python3 -m venv mbedtls-python
+
+mbedtls-python/bin/jsonschema: mbedtls-python/bin/pip
+	mbedtls-python/bin/pip install jsonschema
+
+mbedtls-python/lib/python3.13/site-packages/jinja2: mbedtls-python/bin/pip
+	mbedtls-python/bin/pip install jinja2
+
+mbedtls-build/Makefile: mbedtls/.git/HEAD mbedtls/framework mbedtls/tf-psa-crypto mbedtls-python/bin/jsonschema mbedtls-python/lib/python3.13/site-packages/jinja2 | mbedtls-build
+	cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DCMAKE_INSTALL_PREFIX=$(current_dir)/install -DPython3_ROOT_DIR=$(current_dir)/mbedtls-python/ -DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF -DUSE_STATIC_MBEDTLS_LIBRARY=ON -DUSE_SHARED_MBEDTLS_LIBRARY=OFF -S mbedtls -B mbedtls-build
+
+install/lib/pkgconfig/mbedtls.pc: mbedtls-build/Makefile
+#	cmake --build mbedtls-build && cmake --install mbedtls-build --prefix $(current_dir)/install
+	make -C mbedtls-build install
+
 # TPM2-TSS
 
 tpm2-tss: versions.inc
@@ -65,14 +91,8 @@ tpm2-tss/configure: tpm2-tss/.git/HEAD
 %-build:
 	mkdir -p $@
 
-# Find's mbedtls via header file check, so no requirement on PKG_CONFIG_LIBDIR here
-# musl builds build with crypto=none for now, but that doesn't work for sytsemd-cryptsetup:
-# ERROR:esys_crypto:../tpm2-tss/src/tss2-esys/esys_crypto.c:122:iesys_crypto_hash_start() Crypto callback "hash_start" not set
-# ERROR:esys:../tpm2-tss/src/tss2-esys/esys_iutil.c:1636:iesys_get_name() crypto hash start ErrorCode (0x00070036)
-# ERROR:esys:../tpm2-tss/src/tss2-esys/api/Esys_Load.c:354:Esys_Load_Finish() ErrorCode (0x00070011) in Public name not equal name in response
-# ERROR:esys:../tpm2-tss/src/tss2-esys/api/Esys_Load.c:112:Esys_Load() Esys Finish ErrorCode (0x00070011)
-tpm2-tss-build/Makefile: tpm2-tss/configure install/lib/pkgconfig/uuid.pc | tpm2-tss-build
-	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-tcti-spidev --disable-tcti-i2c-helper --disable-tcti-spi-helper --disable-tcti-spi-ltt2go --disable-policy --with-crypto=$(if $(filter yes,$(MUSL)),none,mbed)
+tpm2-tss-build/Makefile: tpm2-tss/configure install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mbedtls.pc | tpm2-tss-build
+	cd tpm2-tss-build && ../tpm2-tss/configure --prefix=$(current_dir)/install --disable-shared --enable-static --disable-fapi --enable-nodl --disable-tcti-mssim --disable-tcti-swtpm --disable-tcti-spidev --disable-tcti-i2c-helper --disable-tcti-spi-helper --disable-tcti-spi-ltt2go --disable-policy --with-crypto=mbed
 
 install/lib/libtss2-esys.a install/lib/libtss2-policy.a install/lib/libtss2-sys.a install/lib/libtss2-tcti-device.a install/lib/libtss2-tcti-pcap.a install/lib/libtss2-mu.a install/lib/libtss2-rc.a install/lib/libtss2-tcti-cmd.a install/lib/libtss2-tctildr.a install/lib/libtss2-tcti-spi-helper.a: tpm2-tss-build/Makefile
 	+make -C tpm2-tss-build install
@@ -230,4 +250,4 @@ clean:
 
 # Clean all generated
 propper: clean
-	rm -rf cryptsetup/ meson/ systemd/ tpm2-tss/ lvm2/ util-linux/ popt/ json-c/ libxcrypt/
+	rm -rf cryptsetup/ meson/ systemd/ tpm2-tss/ lvm2/ util-linux/ popt/ json-c/ libxcrypt/ mbedtls/ mbedtls-python/
