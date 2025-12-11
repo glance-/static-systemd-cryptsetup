@@ -230,4 +230,4 @@ clean:
 
 # Clean all generated
 propper: clean
-	rm -rf cryptsetup/ meson/ systemd/ tpm2-tss/ lvm2/ util-linux/
+	rm -rf cryptsetup/ meson/ systemd/ tpm2-tss/ lvm2/ util-linux/ popt/ json-c/ libxcrypt/
