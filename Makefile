@@ -131,8 +131,8 @@ cryptsetup/configure.ac: cryptsetup
 cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc cryptsetup/configure.ac
 	cd $(dir $@) && ./autogen.sh
 
-cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/json-c.pc install/lib/pkgconfig/popt.pc | cryptsetup-build
-	cd $(dir $@) && ../cryptsetup/configure CFLAGS='$(CFLAGS) -ULOCALEDIR' --disable-asciidoc --disable-ssh-token --with-crypto_backend=kernel --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d
+cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/json-c.pc install/lib/pkgconfig/popt.pc install/lib/pkgconfig/mbedtls.pc | cryptsetup-build
+	cd $(dir $@) && ../cryptsetup/configure CFLAGS='$(CFLAGS) -ULOCALEDIR' --disable-asciidoc --disable-ssh-token --with-crypto_backend=mbedtls --disable-udev --enable-static-cryptsetup --enable-static --disable-shared --disable-external-tokens --prefix=$(current_dir)/install --with-tmpfilesdir=$(current_dir)/install/usr/lib/tmpfiles.d
 
 install/lib/pkgconfig/libcryptsetup.pc cryptsetup-build/veritysetup.static cryptsetup-build/cryptsetup.static &: cryptsetup-build/Makefile
 	+make -C cryptsetup-build install
