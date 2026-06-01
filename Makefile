@@ -126,7 +126,9 @@ cryptsetup: versions.inc
 
 cryptsetup/.git/HEAD: cryptsetup
 
-cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc
+cryptsetup/configure.ac: cryptsetup
+
+cryptsetup/configure: cryptsetup/.git/HEAD install/lib/pkgconfig/devmapper.pc cryptsetup/configure.ac
 	cd $(dir $@) && ./autogen.sh
 
 cryptsetup-build/Makefile: cryptsetup/configure install/lib/pkgconfig/devmapper.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/json-c.pc install/lib/pkgconfig/popt.pc | cryptsetup-build
@@ -143,7 +145,9 @@ util-linux: versions.inc
 
 util-linux/.git/HEAD: util-linux
 
-util-linux/configure: util-linux/.git/HEAD
+util-linux/configure.ac: | util-linux
+
+util-linux/configure: util-linux/.git/HEAD util-linux/configure.ac
 	cd $(dir $@) && ./autogen.sh
 
 util-linux-build/Makefile: util-linux/configure | util-linux-build
@@ -160,7 +164,9 @@ popt: versions.inc
 
 popt/.git/HEAD: popt
 
-popt/configure: popt/.git/HEAD
+popt/configure.ac: | popt
+
+popt/configure: popt/.git/HEAD popt/configure.ac
 	cd $(dir $@) && ./autogen.sh
 
 popt-build/Makefile: popt/configure | popt-build
@@ -192,7 +198,9 @@ libxcrypt:
 
 libxcrypt/.git/HEAD: libxcrypt
 
-libxcrypt/configure: libxcrypt/.git/HEAD
+libxcrypt/configure.ac: | libxcrypt
+
+libxcrypt/configure: libxcrypt/.git/HEAD libxcrypt/configure.ac
 	cd $(dir $@) && ./autogen.sh
 
 libxcrypt-build/Makefile: libxcrypt/configure | libxcrypt-build
