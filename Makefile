@@ -201,14 +201,6 @@ libxcrypt-build/Makefile: libxcrypt/configure | libxcrypt-build
 install/lib/pkgconfig/libxcrypt.pc: libxcrypt-build/Makefile
 	+make -C libxcrypt-build install
 
-# MAESON , needed for systemd build
-
-meson/bin/pip:
-	python3 -m venv meson
-
-meson/bin/meson: meson/bin/pip
-	meson/bin/pip install meson==$(MESON_VERSION)
-
 # SYSTEMD
 
 # v258 still needs libcap. main (and future v259) doesn't
@@ -232,11 +224,9 @@ SYSTEMD_SYMBOLS_TO_RENAME=parse_size parse_range strv_free strv_length strv_exte
 # patsubst don't expand multiple % so do it in shell instead.
 SYSTEMD_CLFAGS_REMAP=$(shell for s in $(SYSTEMD_SYMBOLS_TO_RENAME) ; do echo "-D$${s}=$${s}_SD" ; done)
 
-# We use a modern meson to get --prefer-static
-#
 # And we turn off anyhting in systemd we don't need in this specific binary.
-systemd-build/build.ninja: meson/bin/meson systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc install/lib/libtss2-esys.a install/lib/pkgconfig/libxcrypt.pc
-	env CFLAGS='$(CFLAGS) $(SYSTEMD_CLFAGS_REMAP)' meson/bin/meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled -Dxz=disabled -Dzlib=disabled -Dlibcurl=disabled -Didn=false -Dlz4=disabled -Dmicrohttpd=disabled -Dpam=disabled -Dpcre2=disabled -Delfutils=disabled -Dglib=disabled -Dgnutls=disabled -Ddbus=disabled -Dbzip2=disabled -Daudit=disabled -Dutmp=false -Dsysvinit-path= -Dsysvrcnd-path= -Drc-local= -Dxkbcommon=disabled -Dlibarchive=disabled -Dlibidn2=disabled $(if $(filter yes,$(MUSL)),-Dlibc=musl) systemd $(dir $@)
+systemd-build/build.ninja: systemd install/lib/pkgconfig/libcryptsetup.pc install/lib/pkgconfig/uuid.pc install/lib/pkgconfig/mount.pc install/lib/pkgconfig/blkid.pc install/lib/libtss2-esys.a install/lib/pkgconfig/libxcrypt.pc
+	env CFLAGS='$(CFLAGS) $(SYSTEMD_CLFAGS_REMAP)' meson setup --wipe --prefer-static --pkg-config-path=$(current_dir)/install/lib/pkgconfig/ --default-library=static -Dmode=release -Dlibcryptsetup-plugins=disabled -Dstatic-binaries=true -Dstatic-libsystemd=true -Dlibcryptsetup=enabled -Dopenssl=disabled -Dp11kit=disabled -Dselinux=disabled -Dgcrypt=disabled -Dzstd=disabled -Dacl=disabled -Dxz=disabled -Dzlib=disabled -Dlibcurl=disabled -Didn=false -Dlz4=disabled -Dmicrohttpd=disabled -Dpam=disabled -Dpcre2=disabled -Delfutils=disabled -Dglib=disabled -Dgnutls=disabled -Ddbus=disabled -Dbzip2=disabled -Daudit=disabled -Dutmp=false -Dsysvinit-path= -Dsysvrcnd-path= -Drc-local= -Dxkbcommon=disabled -Dlibarchive=disabled -Dlibidn2=disabled $(if $(filter yes,$(MUSL)),-Dlibc=musl) systemd $(dir $@)
 
 systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static systemd-build/systemd-dissect.static &: systemd-build/build.ninja
 	ninja -C systemd-build systemd-cryptsetup.static systemd-cryptenroll.static systemd-dissect.static
@@ -256,4 +246,4 @@ clean:
 
 # Clean all generated
 propper: clean
-	rm -rf cryptsetup/ meson/ systemd/ tpm2-tss/ lvm2/ util-linux/ popt/ json-c/ libxcrypt/ mbedtls/ mbedtls-python/ musl-headers
+	rm -rf cryptsetup/ systemd/ tpm2-tss/ lvm2/ util-linux/ popt/ json-c/ libxcrypt/ mbedtls/ mbedtls-python/ musl-headers
