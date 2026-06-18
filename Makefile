@@ -4,8 +4,8 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
 # Not everything manages to use pkg-config, so give them hints to pick up includes and libraries
-CFLAGS=-Oz -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include -fPIC
-LDFLAGS=-Wl,--gc-sections -L$(current_dir)/install/lib/
+CFLAGS=-Oz -flto=auto -fdebug-prefix-map=$(current_dir)=. -ffunction-sections -fdata-sections -I$(current_dir)/install/include -fPIC
+LDFLAGS=-Wl,--gc-sections -flto=auto -L$(current_dir)/install/lib/
 PKG_CONFIG_PATH=$(current_dir)/install/lib/pkgconfig/
 # Empty out system path, we don't want anything from there.
 PKG_CONFIG_LIBDIR=
