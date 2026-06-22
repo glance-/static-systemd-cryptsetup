@@ -15,6 +15,8 @@ include versions.inc
 all: systemd-cryptsetup systemd-cryptenroll veritysetup.static cryptsetup.static systemd-dissect
 
 # By default, build binaries with musl
+# unless we have a explicit other compiler
+ifeq ($(origin CC), default)
 MUSL?=yes
 
 ifeq ($(MUSL),yes)
@@ -49,6 +51,7 @@ systemd-build/build.ninja: musl-headers/linux musl-headers/mtd
 
 # This must be -idirafter so they end up after systemd's override files.
 CFLAGS+=-idirafter$(current_dir)/musl-headers/
+endif
 endif
 
 # And export the variables so they can be picked up from enviorment
