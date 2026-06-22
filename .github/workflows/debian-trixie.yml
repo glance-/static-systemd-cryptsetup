@@ -20,4 +20,4 @@ jobs:
       run: apt-get update && apt-get install -y autopoint gperf gettext autoconf-archive libcap-dev ninja-build libltdl-dev make python3-venv git meson pkg-config python3-jinja2 flex bison cmake
 
     - name: Run make
-      run: make
+      run: make MUSL=no
