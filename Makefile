@@ -14,6 +14,9 @@ include versions.inc
 
 all: systemd-cryptsetup systemd-cryptenroll veritysetup cryptsetup.static systemd-dissect
 
+# By default, build binaries with musl
+MUSL?=yes
+
 ifeq ($(MUSL),yes)
 ifeq ($(SYSTEMD_VERSION), v258-p)
 $(error v258-p doesn't support musl builds!)
