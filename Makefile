@@ -12,7 +12,7 @@ PKG_CONFIG_LIBDIR=
 
 include versions.inc
 
-all: systemd-cryptsetup systemd-cryptenroll veritysetup cryptsetup.static systemd-dissect
+all: systemd-cryptsetup systemd-cryptenroll veritysetup.static cryptsetup.static systemd-dissect
 
 # By default, build binaries with musl
 MUSL?=yes
@@ -241,7 +241,7 @@ systemd-build/systemd-cryptsetup.static systemd-build/systemd-cryptenroll.static
 systemd-%: systemd-build/systemd-%.static
 	strip --strip-all -o $@ $<
 
-veritysetup: cryptsetup-build/veritysetup.static
+veritysetup.static: cryptsetup-build/veritysetup.static
 	strip --strip-all -o $@ $<
 
 cryptsetup.static: cryptsetup-build/cryptsetup.static
@@ -249,7 +249,7 @@ cryptsetup.static: cryptsetup-build/cryptsetup.static
 
 # Clean build and artifacts
 clean:
-	rm -rf *-build install systemd-cryptsetup systemd-cryptenroll veritysetup cryptsetup.static systemd-dissect
+	rm -rf *-build install systemd-cryptsetup systemd-cryptenroll veritysetup.static cryptsetup.static systemd-dissect
 
 # Clean all generated
 propper: clean
