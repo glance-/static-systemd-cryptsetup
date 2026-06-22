@@ -178,7 +178,7 @@ json-c: versions.inc
 json-c/.git/HEAD: json-c
 
 json-c-build/Makefile: json-c/.git/HEAD | json-c-build
-	cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DCMAKE_INSTALL_PREFIX=$(current_dir)/install -S json-c -B json-c-build
+	cmake -DBUILD_APPS=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DCMAKE_INSTALL_PREFIX=$(current_dir)/install -S json-c -B json-c-build
 
 install/lib/pkgconfig/json-c.pc: json-c-build/Makefile
 #	cmake --build json-c-build && cmake --install json-c-build --prefix $(current_dir)/install
